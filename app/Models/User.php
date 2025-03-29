@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -21,6 +22,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'inbox_url', // Add this line
     ];
 
     /**
@@ -44,5 +46,29 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Boot function to auto-generate inbox_url when creating a user.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            $user->inbox_url = static::generateUniqueInboxUrl();
+        });
+    }
+
+    /**
+     * Generate a unique inbox URL.
+     */
+    protected static function generateUniqueInboxUrl(): string
+    {
+        do {
+            $uniqueUrl = Str::uuid()->toString();
+        } while (self::where('inbox_url', $uniqueUrl)->exists());
+
+        return $uniqueUrl;
     }
 }
